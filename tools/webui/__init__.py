@@ -169,14 +169,14 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
             shadow_drop="0 4px 6px -1px rgba(0, 0, 0, 0.1)",
         ),
         css=custom_css,
-        title="🐟 Fish Speech - Professional TTS"
+        title="🐟 Fish Speech - SUP3R Edition"
     ) as app:
         
         # Enhanced Header
         with gr.Row(elem_classes="header-container"):
             gr.HTML("""
                 <div style="text-align: center;">
-                    <h1>🐟 Fish Speech</h1>
+                    <h1>🐟 Fish Speech - SUP3R EDITION 🐟</h1>
                     <p>Advanced Text-to-Speech AI Model</p>
                     <p style="font-size: 0.95rem; opacity: 0.8;">
                         Powered by VQ-GAN and Llama Architecture | Developed by Fish Audio
@@ -269,7 +269,7 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
                         )
 
                 # Reference Audio Section
-                with gr.Accordion("🎤 Voice Reference", open=False):
+                with gr.Accordion("🎤 Voice Reference", open=True):
                     gr.HTML("""
                         <div style="background: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                             <p style="margin: 0; color: var(--body-text-color); font-size: 0.95rem;">
