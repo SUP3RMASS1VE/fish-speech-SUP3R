@@ -135,20 +135,72 @@ if __name__ == "__main__":
     ):
         """Wrapper that checks if models are loaded before calling inference"""
         if app_inference_fct is None:
-            return None, "⏳ Models are still loading, please wait..."
-        return app_inference_fct(
-            text,
-            reference_id,
-            reference_audio,
-            reference_text,
-            max_new_tokens,
-            chunk_length,
-            top_p,
-            repetition_penalty,
-            temperature,
-            seed,
-            use_memory_cache,
-        )
+            loading_message = """
+            <div class='status-message' style='background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #2563eb;'>
+                🔄 <strong>AI Models Loading...</strong><br/>
+                <small>This may take a few minutes on first launch. The interface will be fully functional once loading completes.</small>
+                <div style='margin-top: 0.5rem;'>
+                    <div class='loading-dots' style='margin-right: 0.2rem;'>●</div>
+                    <div class='loading-dots' style='animation-delay: 0.2s; margin-right: 0.2rem;'>●</div>
+                    <div class='loading-dots' style='animation-delay: 0.4s;'>●</div>
+                </div>
+            </div>
+            """
+            return None, loading_message
+        
+        if not text or not text.strip():
+            empty_message = """
+            <div class='status-message' style='background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #d97706;'>
+                ⚠️ <strong>Please enter some text</strong><br/>
+                <small>Type or paste the text you want to convert to speech in the input field above.</small>
+            </div>
+            """
+            return None, empty_message
+            
+        try:
+            # Show processing message
+            processing_message = """
+            <div class='status-message' style='background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #2563eb;'>
+                🎵 <strong>Generating Speech...</strong><br/>
+                <small>AI is processing your text and creating natural-sounding audio.</small>
+            </div>
+            """
+            
+            result = app_inference_fct(
+                text,
+                reference_id,
+                reference_audio,
+                reference_text,
+                max_new_tokens,
+                chunk_length,
+                top_p,
+                repetition_penalty,
+                temperature,
+                seed,
+                use_memory_cache,
+            )
+            
+            # Success message
+            if result[0] is not None:  # Audio generated successfully
+                success_message = """
+                <div class='status-message success-message'>
+                    ✅ <strong>Speech Generated Successfully!</strong><br/>
+                    <small>Your audio is ready. You can play, download, or share it using the controls below.</small>
+                </div>
+                """
+                return result[0], success_message
+            else:
+                return result
+                
+        except Exception as e:
+            error_message = f"""
+            <div class='status-message error-message'>
+                ❌ <strong>Generation Failed</strong><br/>
+                <small>Error: {str(e)}</small><br/>
+                <small>Please try again or adjust your settings.</small>
+            </div>
+            """
+            return None, error_message
 
     # Launch web UI first
     logger.info("🚀 Launching web UI...")
