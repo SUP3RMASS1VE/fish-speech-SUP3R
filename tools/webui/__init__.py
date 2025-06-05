@@ -7,7 +7,7 @@ from tools.webui.variables import HEADER_MD, TEXTBOX_PLACEHOLDER
 
 
 def build_app(inference_fct: Callable, theme: str = "light") -> gr.Blocks:
-    with gr.Blocks(theme=gr.themes.Base()) as app:
+    with gr.Blocks(theme=gr.themes.Base(), title="Fish Speech") as app:
         gr.Markdown(HEADER_MD)
 
         # Use light theme by default
