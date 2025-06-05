@@ -1,4 +1,5 @@
 import os
+import threading
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -37,8 +38,70 @@ def parse_args():
     parser.add_argument("--compile", action="store_true")
     parser.add_argument("--max-gradio-length", type=int, default=0)
     parser.add_argument("--theme", type=str, default="light")
+    parser.add_argument("--skip-dry-run", action="store_true", default=True, help="Skip the warm-up dry run")
+    parser.add_argument("--skip-model-loading", action="store_true", help="Skip model loading entirely")
 
     return parser.parse_args()
+
+
+def load_models_in_background(args):
+    """Load models in a background thread"""
+    global inference_engine, app_inference_fct
+    
+    try:
+        logger.info("Loading Llama model...")
+        llama_queue = launch_thread_safe_queue(
+            checkpoint_path=args.llama_checkpoint_path,
+            device=args.device,
+            precision=args.precision,
+            compile=args.compile,
+        )
+
+        logger.info("Loading VQ-GAN model...")
+        decoder_model = load_decoder_model(
+            config_name=args.decoder_config_name,
+            checkpoint_path=args.decoder_checkpoint_path,
+            device=args.device,
+        )
+
+        logger.info("Decoder model loaded...")
+
+        # Create the inference engine
+        inference_engine = TTSInferenceEngine(
+            llama_queue=llama_queue,
+            decoder_model=decoder_model,
+            compile=args.compile,
+            precision=args.precision,
+        )
+
+        if not args.skip_dry_run:
+            logger.info("Warming up...")
+            # Dry run to check if the model is loaded correctly and avoid the first-time latency
+            list(
+                inference_engine.inference(
+                    ServeTTSRequest(
+                        text="Hello world.",
+                        references=[],
+                        reference_id=None,
+                        max_new_tokens=1024,
+                        chunk_length=200,
+                        top_p=0.7,
+                        repetition_penalty=1.5,
+                        temperature=0.7,
+                        format="wav",
+                    )
+                )
+            )
+            logger.info("Warming up done!")
+        
+        # Update the global inference function
+        app_inference_fct = get_inference_wrapper(inference_engine)
+        logger.info("🎉 Models loaded successfully! The web UI is now fully functional.")
+        
+    except Exception as e:
+        logger.error(f"Error loading models: {e}")
+        inference_engine = None
+        app_inference_fct = None
 
 
 if __name__ == "__main__":
@@ -53,52 +116,52 @@ if __name__ == "__main__":
         logger.info("CUDA is not available, running on CPU.")
         args.device = "cpu"
 
-    logger.info("Loading Llama model...")
-    llama_queue = launch_thread_safe_queue(
-        checkpoint_path=args.llama_checkpoint_path,
-        device=args.device,
-        precision=args.precision,
-        compile=args.compile,
-    )
+    # Global variables to hold the inference engine and function
+    inference_engine = None
+    app_inference_fct = None
 
-    logger.info("Loading VQ-GAN model...")
-    decoder_model = load_decoder_model(
-        config_name=args.decoder_config_name,
-        checkpoint_path=args.decoder_checkpoint_path,
-        device=args.device,
-    )
-
-    logger.info("Decoder model loaded, warming up...")
-
-    # Create the inference engine
-    inference_engine = TTSInferenceEngine(
-        llama_queue=llama_queue,
-        decoder_model=decoder_model,
-        compile=args.compile,
-        precision=args.precision,
-    )
-
-    # Dry run to check if the model is loaded correctly and avoid the first-time latency
-    list(
-        inference_engine.inference(
-            ServeTTSRequest(
-                text="Hello world.",
-                references=[],
-                reference_id=None,
-                max_new_tokens=1024,
-                chunk_length=200,
-                top_p=0.7,
-                repetition_penalty=1.5,
-                temperature=0.7,
-                format="wav",
-            )
+    def dynamic_inference_wrapper(
+        text,
+        reference_id,
+        reference_audio,
+        reference_text,
+        max_new_tokens,
+        chunk_length,
+        top_p,
+        repetition_penalty,
+        temperature,
+        seed,
+        use_memory_cache,
+    ):
+        """Wrapper that checks if models are loaded before calling inference"""
+        if app_inference_fct is None:
+            return None, "⏳ Models are still loading, please wait..."
+        return app_inference_fct(
+            text,
+            reference_id,
+            reference_audio,
+            reference_text,
+            max_new_tokens,
+            chunk_length,
+            top_p,
+            repetition_penalty,
+            temperature,
+            seed,
+            use_memory_cache,
         )
-    )
 
-    logger.info("Warming up done, launching the web UI...")
+    # Launch web UI first
+    logger.info("🚀 Launching web UI...")
+    app = build_app(dynamic_inference_wrapper, args.theme)
+    
+    # Start model loading in background if not skipped
+    if not args.skip_model_loading:
+        logger.info("📦 Starting model loading in background...")
+        model_thread = threading.Thread(target=load_models_in_background, args=(args,))
+        model_thread.daemon = True
+        model_thread.start()
+    else:
+        logger.info("Skipping model loading as requested.")
 
-    # Get the inference function with the immutable arguments
-    inference_fct = get_inference_wrapper(inference_engine)
-
-    app = build_app(inference_fct, args.theme)
-    app.launch(show_api=True)
+    # Launch the app
+    app.launch(show_api=True, inbrowser=True)
