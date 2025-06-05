@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument("--half", action="store_true")
     parser.add_argument("--compile", action="store_true")
     parser.add_argument("--max-gradio-length", type=int, default=0)
-    parser.add_argument("--theme", type=str, default="light")
+    parser.add_argument("--theme", type=str, default="dark")
     parser.add_argument("--skip-dry-run", action="store_true", default=True, help="Skip the warm-up dry run")
     parser.add_argument("--skip-model-loading", action="store_true", help="Skip model loading entirely")
 
