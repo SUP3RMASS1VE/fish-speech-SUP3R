@@ -134,6 +134,31 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
         40% { transform: scale(1); }
     }
     
+    /* Audio Effects Styling */
+    .effects-accordion {
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+        border: 1px solid rgba(147, 51, 234, 0.1) !important;
+        border-radius: 8px !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .effects-section {
+        background: rgba(255, 255, 255, 0.5) !important;
+        border-radius: 6px !important;
+        padding: 0.75rem !important;
+        margin: 0.25rem 0 !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .effects-checkbox {
+        font-weight: 600 !important;
+        color: var(--body-text-color) !important;
+    }
+    
+    .effects-slider .gradio-slider {
+        accent-color: #8b5cf6 !important;
+    }
+    
     /* Responsive design */
     @media (max-width: 768px) {
         .gradio-container {
@@ -150,6 +175,10 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
         
         .input-card, .output-card {
             padding: 1rem !important;
+        }
+        
+        .effects-section {
+            padding: 0.5rem !important;
         }
     }
     """
@@ -309,6 +338,208 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
                             elem_classes="input-field"
                         )
 
+                # Audio Effects Section
+                with gr.Accordion("🎛️ Audio Effects", open=False, elem_classes="effects-accordion"):
+                    gr.HTML("""
+                        <div style="background: rgba(147, 51, 234, 0.05); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <p style="margin: 0; color: var(--body-text-color); font-size: 0.95rem;">
+                                <strong>🎵 Pro Audio:</strong> Enhance your generated speech with professional audio effects like reverb, echo, EQ, and more.
+                            </p>
+                        </div>
+                    """)
+                    
+
+                    
+                    # Volume and Dynamics
+                    with gr.Accordion("📢 Volume & Dynamics", open=False, elem_classes="effects-section"):
+                        with gr.Row():
+                            volume_enabled = gr.Checkbox(
+                                label="Volume Adjustment",
+                                value=False
+                            )
+                            volume_gain = gr.Slider(
+                                label="Volume Gain (dB)",
+                                info="Adjust overall volume",
+                                minimum=-20,
+                                maximum=20,
+                                value=0,
+                                step=1,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            compression_enabled = gr.Checkbox(
+                                label="Dynamic Compression",
+                                value=False
+                            )
+                            compression_threshold = gr.Slider(
+                                label="Compression Threshold (dB)",
+                                info="Level above which compression applies",
+                                minimum=-40,
+                                maximum=0,
+                                value=-20,
+                                step=1,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            compression_ratio = gr.Slider(
+                                label="Compression Ratio",
+                                info="Amount of compression (higher = more compressed)",
+                                minimum=1,
+                                maximum=10,
+                                value=4,
+                                step=0.5,
+                                elem_classes="slider-container"
+                            )
+                            noise_gate_enabled = gr.Checkbox(
+                                label="Noise Gate",
+                                value=False
+                            )
+                        
+                        with gr.Row():
+                            noise_gate_threshold = gr.Slider(
+                                label="Noise Gate Threshold (dB)",
+                                info="Reduce background noise below this level",
+                                minimum=-60,
+                                maximum=-20,
+                                value=-40,
+                                step=1,
+                                elem_classes="slider-container"
+                            )
+                    
+                    # EQ Section
+                    with gr.Accordion("🎚️ Equalizer", open=False, elem_classes="effects-section"):
+                        with gr.Row():
+                            eq_enabled = gr.Checkbox(
+                                label="3-Band EQ",
+                                value=False
+                            )
+                        
+                        with gr.Row():
+                            eq_bass = gr.Slider(
+                                label="Bass (200Hz)",
+                                info="Low frequency adjustment",
+                                minimum=-12,
+                                maximum=12,
+                                value=0,
+                                step=0.5,
+                                elem_classes="slider-container"
+                            )
+                            eq_mid = gr.Slider(
+                                label="Mid (200Hz-4kHz)",
+                                info="Mid frequency adjustment",
+                                minimum=-12,
+                                maximum=12,
+                                value=0,
+                                step=0.5,
+                                elem_classes="slider-container"
+                            )
+                            eq_treble = gr.Slider(
+                                label="Treble (4kHz+)",
+                                info="High frequency adjustment",
+                                minimum=-12,
+                                maximum=12,
+                                value=0,
+                                step=0.5,
+                                elem_classes="slider-container"
+                            )
+                    
+                    # Pitch and Speed
+                    with gr.Accordion("🎵 Pitch & Speed", open=False, elem_classes="effects-section"):
+                        with gr.Row():
+                            pitch_enabled = gr.Checkbox(
+                                label="Pitch Shifting",
+                                value=False
+                            )
+                            pitch_shift = gr.Slider(
+                                label="Pitch Shift (semitones)",
+                                info="Shift pitch up/down (-12 to +12 semitones)",
+                                minimum=-12,
+                                maximum=12,
+                                value=0,
+                                step=0.5,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            speed_enabled = gr.Checkbox(
+                                label="Speed Control",
+                                value=False
+                            )
+                            speed_factor = gr.Slider(
+                                label="Speed Factor",
+                                info="Change playback speed (0.5x to 2.0x)",
+                                minimum=0.5,
+                                maximum=2.0,
+                                value=1.0,
+                                step=0.05,
+                                elem_classes="slider-container"
+                            )
+                    
+                    # Spatial Effects
+                    with gr.Accordion("🌌 Spatial Effects", open=False, elem_classes="effects-section"):
+                        with gr.Row():
+                            reverb_enabled = gr.Checkbox(
+                                label="Reverb",
+                                value=False
+                            )
+                            reverb_room_size = gr.Slider(
+                                label="Room Size",
+                                info="Simulated room size",
+                                minimum=0.1,
+                                maximum=1.0,
+                                value=0.5,
+                                step=0.1,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            reverb_damping = gr.Slider(
+                                label="Damping",
+                                info="High frequency absorption",
+                                minimum=0.0,
+                                maximum=1.0,
+                                value=0.5,
+                                step=0.1,
+                                elem_classes="slider-container"
+                            )
+                            reverb_wet_level = gr.Slider(
+                                label="Wet Level",
+                                info="Amount of reverb effect",
+                                minimum=0.0,
+                                maximum=0.8,
+                                value=0.3,
+                                step=0.05,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            echo_enabled = gr.Checkbox(
+                                label="Echo",
+                                value=False
+                            )
+                            echo_delay = gr.Slider(
+                                label="Echo Delay (seconds)",
+                                info="Time between echoes",
+                                minimum=0.1,
+                                maximum=1.0,
+                                value=0.3,
+                                step=0.05,
+                                elem_classes="slider-container"
+                            )
+                        
+                        with gr.Row():
+                            echo_decay = gr.Slider(
+                                label="Echo Decay",
+                                info="Echo volume reduction",
+                                minimum=0.1,
+                                maximum=0.8,
+                                value=0.5,
+                                step=0.05,
+                                elem_classes="slider-container"
+                            )
+
             # Output Section
             with gr.Column(scale=4, elem_classes="output-card"):
                 gr.HTML("<h3 style='margin-top: 0; color: var(--body-text-color); font-weight: 600;'>🔊 Generated Audio</h3>")
@@ -353,7 +584,8 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
                 </div>
             """)
 
-        # Event Handlers
+
+        
         generate.click(
             inference_fct,
             inputs=[
@@ -368,6 +600,29 @@ def build_app(inference_fct: Callable, theme: str = "dark") -> gr.Blocks:
                 temperature,
                 seed,
                 use_memory_cache,
+                # Audio Effects Parameters
+                reverb_enabled,
+                reverb_room_size,
+                reverb_damping,
+                reverb_wet_level,
+                echo_enabled,
+                echo_delay,
+                echo_decay,
+                eq_enabled,
+                eq_bass,
+                eq_mid,
+                eq_treble,
+                pitch_enabled,
+                pitch_shift,
+                speed_enabled,
+                speed_factor,
+                volume_enabled,
+                volume_gain,
+                compression_enabled,
+                compression_threshold,
+                compression_ratio,
+                noise_gate_enabled,
+                noise_gate_threshold,
             ],
             outputs=[audio, error],
             concurrency_limit=1,
