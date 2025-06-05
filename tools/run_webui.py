@@ -15,6 +15,7 @@ from fish_speech.models.text2semantic.inference import launch_thread_safe_queue
 from fish_speech.utils.schema import ServeTTSRequest
 from tools.webui import build_app
 from tools.webui.inference import get_inference_wrapper
+from tools.webui.audio_effects import create_audio_effects_processor
 
 # Make einx happy
 os.environ["EINX_FILTER_TRACEBACK"] = "false"
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     # Global variables to hold the inference engine and function
     inference_engine = None
     app_inference_fct = None
+    audio_effects_processor = create_audio_effects_processor()
 
     def dynamic_inference_wrapper(
         text,
@@ -132,6 +134,29 @@ if __name__ == "__main__":
         temperature,
         seed,
         use_memory_cache,
+        # Audio Effects Parameters
+        reverb_enabled,
+        reverb_room_size,
+        reverb_damping,
+        reverb_wet_level,
+        echo_enabled,
+        echo_delay,
+        echo_decay,
+        eq_enabled,
+        eq_bass,
+        eq_mid,
+        eq_treble,
+        pitch_enabled,
+        pitch_shift,
+        speed_enabled,
+        speed_factor,
+        volume_enabled,
+        volume_gain,
+        compression_enabled,
+        compression_threshold,
+        compression_ratio,
+        noise_gate_enabled,
+        noise_gate_threshold,
     ):
         """Wrapper that checks if models are loaded before calling inference"""
         if app_inference_fct is None:
@@ -182,13 +207,76 @@ if __name__ == "__main__":
             
             # Success message
             if result[0] is not None:  # Audio generated successfully
-                success_message = """
-                <div class='status-message success-message'>
-                    ✅ <strong>Speech Generated Successfully!</strong><br/>
-                    <small>Your audio is ready. You can play, download, or share it using the controls below.</small>
-                </div>
-                """
-                return result[0], success_message
+                # Apply audio effects if any are enabled
+                audio_data = result[0]
+                sample_rate = audio_data[0] if isinstance(audio_data, tuple) else 22050
+                audio_array = audio_data[1] if isinstance(audio_data, tuple) else audio_data
+                
+                # Check if any effects are enabled
+                effects_enabled = any([
+                    reverb_enabled, echo_enabled, eq_enabled, pitch_enabled, 
+                    speed_enabled, volume_enabled, compression_enabled, noise_gate_enabled
+                ])
+                
+                if effects_enabled:
+                    try:
+                        # Apply audio effects
+                        processed_sample_rate, processed_audio = audio_effects_processor.apply_effects(
+                            audio_array,
+                            sample_rate,
+                            reverb_enabled=reverb_enabled,
+                            reverb_room_size=reverb_room_size,
+                            reverb_damping=reverb_damping,
+                            reverb_wet_level=reverb_wet_level,
+                            echo_enabled=echo_enabled,
+                            echo_delay=echo_delay,
+                            echo_decay=echo_decay,
+                            eq_enabled=eq_enabled,
+                            eq_bass=eq_bass,
+                            eq_mid=eq_mid,
+                            eq_treble=eq_treble,
+                            pitch_enabled=pitch_enabled,
+                            pitch_shift=pitch_shift,
+                            speed_enabled=speed_enabled,
+                            speed_factor=speed_factor,
+                            volume_enabled=volume_enabled,
+                            volume_gain=volume_gain,
+                            compression_enabled=compression_enabled,
+                            compression_threshold=compression_threshold,
+                            compression_ratio=compression_ratio,
+                            noise_gate_enabled=noise_gate_enabled,
+                            noise_gate_threshold=noise_gate_threshold,
+                        )
+                        
+                        # Return processed audio
+                        processed_result = (processed_sample_rate, processed_audio)
+                        success_message = """
+                        <div class='status-message success-message'>
+                            ✅ <strong>Speech Generated with Effects!</strong><br/>
+                            <small>Your audio has been enhanced with professional effects. You can play, download, or share it using the controls below.</small>
+                        </div>
+                        """
+                        return processed_result, success_message
+                        
+                    except Exception as e:
+                        logger.error(f"Error applying audio effects: {e}")
+                        # Return original audio if effects fail
+                        warning_message = f"""
+                        <div class='status-message' style='background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #d97706;'>
+                            ⚠️ <strong>Effects Processing Failed</strong><br/>
+                            <small>Audio generated successfully, but effects could not be applied: {str(e)}</small><br/>
+                            <small>Returning original audio without effects.</small>
+                        </div>
+                        """
+                        return result[0], warning_message
+                else:
+                    success_message = """
+                    <div class='status-message success-message'>
+                        ✅ <strong>Speech Generated Successfully!</strong><br/>
+                        <small>Your audio is ready. You can play, download, or share it using the controls below.</small>
+                    </div>
+                    """
+                    return result[0], success_message
             else:
                 return result
                 
