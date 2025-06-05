@@ -1,3 +1,37 @@
+
+# 🐟 Fish Speech - SUP3R EDITION
+
+**Fish Speech - SUP3R Edition** is a professional-grade text-to-speech (TTS) interface powered by advanced AI models like VQ-GAN and LLaMA. This Gradio app allows users to input text, fine-tune generation parameters, upload reference audio, and apply real-time audio effects for natural and customized speech synthesis.
+
+## 🚀 Features
+
+* 🎤 **Text-to-Speech Synthesis** using deep learning
+* 📥 **Reference Audio Upload** for voice cloning
+* ⚙️ **Advanced Settings** to control generation (e.g., chunk length, top-p, temperature)
+* 🎛️ **Audio Effects**:
+
+  * Volume, Compression, Noise Gate
+  * Equalizer (3-Band)
+  * Pitch Shift & Speed Control
+  * Reverb & Echo
+* 🎨 **Customizable UI** with a modern, responsive layout
+* 💾 **Download and Share** generated audio
+
+## 🖥️ UI Overview
+
+* **Input Panel**: Enter your text, adjust generation settings, and upload optional reference audio.
+* **Output Panel**: Preview the generated speech and download or share it.
+* **Audio Effects Panel**: Toggle and configure various professional audio enhancements.
+
+## 🧠 Powered By
+
+* [Gradio](https://gradio.app)
+* [VQ-GAN](https://arxiv.org/abs/2012.09841)
+* [LLaMA](https://ai.facebook.com/blog/large-language-model-llama-meta-ai/)
+* Developed by [Fish Audio](https://github.com/fishaudio)
+
+## Install via [Pinokio](https://pinokio-home.netlify.app/item?uri=https://github.com/SUP3RMASS1VE/Fish-Speech).
+
 <div align="center">
 <h1>Fish Speech</h1>
 
